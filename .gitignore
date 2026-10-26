@@ -1,0 +1,18 @@
+# Local/editor noise
+.DS_Store
+__pycache__/
+*.py[cod]
+*.swp
+
+# Local Docker state and one-off outputs
+.env
+.env.*
+*.pid
+
+# Generated local run products. The public repository ships source and
+# environment only; results are created by the operator on the local host.
+evidence/
+out/
+*.json
+*.json.gdb.log
+*.log

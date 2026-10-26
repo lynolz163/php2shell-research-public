@@ -1,0 +1,9 @@
+# CVE-2026-109618 reproduction profile (mirrors the published lab setup:
+# Datadog Security Labs used memory_limit=16M, post_max_size=64M, mod_php).
+php_value memory_limit 16M
+php_value post_max_size 64M
+php_value max_input_vars 20000
+php_value max_input_nesting_level 64
+# keep the fatal message in the response so a crashed request is visible
+php_value display_errors 1
+php_value error_reporting -1

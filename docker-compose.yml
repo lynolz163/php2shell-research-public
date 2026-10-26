@@ -1,0 +1,95 @@
+# php2shell-research — CVE-2026-109618 / CVE-2026-109619 对照靶场
+#
+# 本机 Docker 未安装 compose 插件时的实际执行通道是 scripts/start.sh（纯 docker CLI）。
+# 本文件提供等价定义，供已安装 compose 的环境使用。
+# 所有端口只绑定 127.0.0.1。
+
+x-php-lab: &php-lab
+  restart: "no"
+  volumes:
+    - ./webroot:/var/www/html:ro
+    - ./config/php-lab.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
+    - ./evidence/logs/${NAME}/php:/var/log/php
+  mem_limit: 512m
+  cpus: 1.0
+  pids_limit: 128
+
+services:
+  vuln-a:
+    <<: *php-lab
+    image: php:8.4.26-apache
+    container_name: vuln-a
+    environment: [ "NAME=vuln-a" ]
+    ports: [ "127.0.0.1:28081:80" ]
+    volumes:
+      - ./webroot:/var/www/html:ro
+      - ./config/php-lab.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
+      - ./config/apache-vhost.conf:/etc/apache2/sites-enabled/000-default.conf:ro
+      - ./evidence/logs/vuln-a/apache:/var/log/apache2
+  fixed-a:
+    <<: *php-lab
+    image: php:8.4.27-apache
+    container_name: fixed-a
+    environment: [ "NAME=fixed-a" ]
+    ports: [ "127.0.0.1:28082:80" ]
+    volumes:
+      - ./webroot:/var/www/html:ro
+      - ./config/php-lab.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
+      - ./config/apache-vhost.conf:/etc/apache2/sites-enabled/000-default.conf:ro
+      - ./evidence/logs/fixed-a/apache:/var/log/apache2
+  vuln-b:
+    <<: *php-lab
+    image: php:8.3.35-apache
+    container_name: vuln-b
+    environment: [ "NAME=vuln-b" ]
+    ports: [ "127.0.0.1:28083:80" ]
+    volumes:
+      - ./webroot:/var/www/html:ro
+      - ./config/php-lab.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
+      - ./config/apache-vhost.conf:/etc/apache2/sites-enabled/000-default.conf:ro
+      - ./evidence/logs/vuln-b/apache:/var/log/apache2
+  fixed-b:
+    <<: *php-lab
+    image: php:8.3.36-apache
+    container_name: fixed-b
+    environment: [ "NAME=fixed-b" ]
+    ports: [ "127.0.0.1:28084:80" ]
+    volumes:
+      - ./webroot:/var/www/html:ro
+      - ./config/php-lab.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
+      - ./config/apache-vhost.conf:/etc/apache2/sites-enabled/000-default.conf:ro
+      - ./evidence/logs/fixed-b/apache:/var/log/apache2
+
+  fpm-vuln:
+    <<: *php-lab
+    image: php:8.4.26-fpm
+    container_name: fpm-vuln
+    environment: [ "NAME=fpm-vuln" ]
+  fpm-vuln-nginx:
+    image: nginx:alpine
+    container_name: fpm-vuln-nginx
+    mem_limit: 128m
+    ports: [ "127.0.0.1:28085:80" ]
+    volumes:
+      - ./webroot:/var/www/html:ro
+      - ./config/nginx-fpm-vuln.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on: [ fpm-vuln ]
+
+  fpm-fixed:
+    <<: *php-lab
+    image: php:8.4.27-fpm
+    container_name: fpm-fixed
+    environment: [ "NAME=fpm-fixed" ]
+  fpm-fixed-nginx:
+    image: nginx:alpine
+    container_name: fpm-fixed-nginx
+    mem_limit: 128m
+    ports: [ "127.0.0.1:28086:80" ]
+    volumes:
+      - ./webroot:/var/www/html:ro
+      - ./config/nginx-fpm-fixed.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on: [ fpm-fixed ]
+
+networks:
+  default:
+    name: php2shell-net
